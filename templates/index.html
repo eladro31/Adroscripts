@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdroScripts - Tus scripts en un solo lugar y gratis</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/script.js" defer></script>
+</head>
+<body>
+    <!-- Aviso de Cookies -->
+    <div id="cookie-banner" class="cookie-banner">
+        <p>Usamos cookies para mejorar tu experiencia en nuestro sitio. Al continuar, aceptas nuestro uso de cookies.</p>
+        <button onclick="acceptCookies()">Aceptar</button>
+    </div>
+
+    <header>
+        <h1>AdroScripts</h1>
+        <p>Tus scripts en un solo lugar y gratis</p>
+    </header>
+    <main>
+        <!-- Formulario de Clave -->
+        <section class="auth-section">
+            <h2>Ingrese su Clave</h2>
+            <input type="text" id="keyInput" placeholder="Ingresar Clave">
+            <button onclick="verifyKey()">Verificar Clave</button>
+            <p id="message"></p>
+        </section>
+
+        <!-- Sección de Descarga de Scripts -->
+        <section class="download-section">
+            <h2>Descarga de Scripts</h2>
+            <ul id="scripts-list">
+                <li><a href="/scripts/admin_script_chrome.js" download onclick="showAd()">Script para Chrome</a></li>
+                <li><a href="/scripts/admin_script_edge.js" download onclick="showAd()">Script para Edge</a></li>
+                <!-- Añade más scripts según sea necesario -->
+            </ul>
+        </section>
+
+        <!-- Sección para recomendar scripts -->
+        <section class="recommend-section">
+            <h2>Recomendar un Script</h2>
+            <form id="recommend-form">
+                <input type="text" id="scriptName" placeholder="Nombre del Script" required>
+                <textarea id="scriptDescription" placeholder="Descripción del Script" required></textarea>
+                <button type="submit">Recomendar</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>Contacto: <a href="tel:+5491128473657">+54 9 11 2847-3657</a></p>
+        <p>© 2025 AdroScripts. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>
+
