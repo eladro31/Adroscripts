@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adroscripts | Delta Executor Hub</title>
+    <title>Adroscripts | Delta Executor Hub Beta V0.1</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -194,7 +194,7 @@
         .btn-app-redir { display: block; background: var(--as-accent); color: #000; text-decoration: none; padding: 8px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; }
     </style>
 </head>
-<body>
+<body onload="inicializarAdroscripts()">
 
     <div id="global-alert-modal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
@@ -363,10 +363,9 @@
 
         let esAdmin = false;
         const CONFIG_ADMIN = "admin@mercadogato.com";
-        let usuarioIP = "127.0.0.1"; // Default fallback
+        let usuarioIP = "127.0.0.1"; 
 
         function inicializarAdroscripts() {
-            // Resolver IP antes de chequear el estado para mitigar bypasses
             fetch('https://api.ipify.org?format=json')
                 .then(res => res.json())
                 .then(data => {
@@ -388,6 +387,8 @@
                     esAdmin = false;
                     panel.style.display = 'none';
                     authStatus.innerHTML = `<button class="btn-login" onclick="abrirLoginMaster()">Staff Login</button>`;
+                    document.getElementById('admin-requests-feed').innerHTML = "";
+                    document.getElementById('ban-list-admin').innerHTML = "";
                 }
                 escucharAPK();
                 escucharScripts();
@@ -397,7 +398,6 @@
             });
         }
 
-        // --- SISTEMA 3: SEGURIDAD Y CORTAFUEGOS (IP BANS) ---
         function verificarBaneo() {
             db.collection('blacklist_ips').doc(usuarioIP).onSnapshot(doc => {
                 if(doc.exists) {
@@ -426,6 +426,7 @@
         }
 
         function escucharListaBaneosAdmin() {
+            if(!esAdmin) return;
             db.collection('blacklist_ips').onSnapshot(snap => {
                 const box = document.getElementById('ban-list-admin');
                 box.innerHTML = "<strong>IPs Bloqueadas actualmente:</strong><br>";
@@ -435,11 +436,9 @@
             });
         }
 
-        // --- SISTEMA 1: ALERTA DE ENTRADA CONFIGURABLE ---
         function escucharAlertaGlobal() {
             db.collection('config_delta').doc('modal_alerta').get().then(doc => {
                 if(doc.exists && doc.data().activa === "true") {
-                    // Evitar que salte si el usuario está bloqueado por IP
                     if(!document.body.classList.contains('user-banned')) {
                         document.getElementById('global-alert-text').innerText = doc.data().texto;
                         document.getElementById('global-alert-modal').style.display = 'flex';
@@ -457,7 +456,6 @@
             }).then(() => alert("Alerta de entrada guardada."));
         }
 
-        // --- SISTEMA 2: SOLICITAR SCRIPT & COMPROBACIÓN ---
         function enviarSolicitudScript() {
             const juego = document.getElementById('req-title').value.trim();
             const desc = document.getElementById('req-features').value.trim();
@@ -475,6 +473,7 @@
         }
 
         function escucharSolicitudesAdmin() {
+            if(!esAdmin) return;
             db.collection('delta_solicitudes').orderBy('fecha', 'desc').onSnapshot(snap => {
                 const feed = document.getElementById('admin-requests-feed');
                 feed.innerHTML = "";
@@ -508,7 +507,6 @@
             });
         }
 
-        // --- SISTEMA 4: LINKS FOOTER ---
         function publicarLinkFooter() {
             const app = document.getElementById('link-app-input').value.trim();
             const btnTxt = document.getElementById('link-text-input').value.trim();
@@ -547,7 +545,6 @@
             });
         }
 
-        // --- GESTIÓN DE APK DELTA ---
         function escucharAPK() {
             db.collection('config_delta').doc('apk_link').onSnapshot(doc => {
                 const statusText = document.getElementById('apk-status-text');
@@ -570,7 +567,6 @@
             db.collection('config_delta').doc('apk_link').set({ url: url }).then(() => alert("Link APK actualizado."));
         }
 
-        // --- GESTIÓN DE MARQUESINA ---
         function escucharMarquesina() {
             db.collection('config_delta').doc('marquesina_anuncio').onSnapshot(doc => {
                 const marqueeDisplay = document.getElementById('nexus-marquee-display');
@@ -591,7 +587,6 @@
             db.collection('config_delta').doc('marquesina_anuncio').set({ texto: nuevoTexto }).then(() => alert("Marquesina guardada."));
         }
 
-        // --- BUSCADOR ---
         function filtrarScripts() {
             const textoBusqueda = document.getElementById('script-searcher').value.toLowerCase();
             const tarjetas = document.querySelectorAll('.script-card');
@@ -601,7 +596,6 @@
             });
         }
 
-        // --- GESTIÓN DEL COLECTOR DE SCRIPTS ---
         function escucharScripts() {
             db.collection('delta_scripts').orderBy('fecha', 'desc').onSnapshot(snap => {
                 const feed = document.getElementById('scripts-feed');
@@ -655,42 +649,27 @@
         function escaparHTML(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
         function abrirLoginMaster() {
-    const email = prompt("Email del Staff Técnico:");
-    if (!email) return;
-    const pass = prompt("Contraseña de Seguridad:");
-    if (!pass) return;
+            const email = prompt("Email del Staff Técnico:");
+            if (!email) return;
+            const pass = prompt("Contraseña de Seguridad:");
+            if (!pass) return;
 
-    console.log("Intentando conexión con Firebase Auth para:", email);
-
-    auth.signInWithEmailAndPassword(email, pass)
-        .then((userCredential) => {
-            console.log("¡Inicio de sesión exitoso!", userCredential.user);
-            alert("Acceso concedido. Panel de administración activado.");
-        })
-        .catch((error) => {
-            // Diagnóstico detallado del error en la programación
-            console.error("Código de error de Firebase:", error.code);
-            console.error("Mensaje de error:", error.message);
-            
-            // Mensajes amigables según el error detectado
-            switch (error.code) {
-                case 'auth/operation-not-allowed':
-                    alert("Error: El inicio de sesión por Email/Contraseña está DESACTIVADO en la consola de Firebase.");
-                    break;
-                case 'auth/wrong-password':
-                case 'auth/user-not-found':
-                case 'auth/invalid-credential':
-                    alert("Credenciales incorrectas. Verificá el usuario y la contraseña.");
-                    break;
-                case 'auth/invalid-email':
-                    alert("El formato del correo electrónico ingresado no es válido.");
-                    break;
-                default:
-                    alert("Error crítico de autenticación: " + error.message);
-            }
-        });
-}
-
+            auth.signInWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    // Verificación inmediata de la cuenta administradora
+                    if(userCredential.user.email.toLowerCase() === CONFIG_ADMIN.toLowerCase()) {
+                        esAdmin = true;
+                        document.getElementById('admin-panel-box').style.display = 'block';
+                        alert("Acceso concedido. Panel de administración sincronizado.");
+                    } else {
+                        alert("Sesión iniciada, pero este correo no pertenece al Staff Administrador.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error de autenticación:", error.code, error.message);
+                    alert("Acceso denegado: " + error.message);
+                });
+        }
     </script>
 </body>
 </html>
