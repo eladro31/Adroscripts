@@ -64,6 +64,53 @@
         }
         .btn-download:hover { opacity: 0.9; }
 
+        /* Componente de Buscador y Marquesina */
+        .search-nexus-zone {
+            background: var(--as-card);
+            border: 1px solid var(--as-borde);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .search-box-wrapper {
+            margin-bottom: 15px;
+        }
+        .search-box-wrapper label {
+            color: var(--as-accent);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .marquee-wrapper {
+            background: #09060f;
+            border: 1px solid var(--as-borde);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            padding: 8px 12px;
+        }
+        .marquee-tag {
+            background: var(--as-accent);
+            color: #000;
+            font-size: 0.75rem;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 10px;
+            letter-spacing: 0.5px;
+        }
+        .marquee-text-container {
+            flex: 1;
+            overflow: hidden;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
         /* Zonas de Administración */
         .admin-box {
             background: var(--as-card); border: 2px dashed var(--as-accent);
@@ -124,6 +171,19 @@
             <a href="#" id="apk-download-link" class="btn-download" target="_blank" style="display: none;">📥 Descargar APK</a>
         </section>
 
+        <div class="search-nexus-zone">
+            <div class="search-box-wrapper">
+                <label for="script-searcher">Buscar Script:</label>
+                <input type="text" id="script-searcher" placeholder="Escribí el nombre del juego o script..." oninput="filtrarScripts()">
+            </div>
+            <div class="marquee-wrapper">
+                <span class="marquee-tag">AVISO:</span>
+                <div class="marquee-text-container">
+                    <marquee id="nexus-marquee-display" scrollamount="5">Cargando anuncios del servidor...</marquee>
+                </div>
+            </div>
+        </div>
+
         <div class="admin-box" id="admin-panel-box">
             
             <div style="border-bottom: 1px dashed var(--as-borde); padding-bottom: 20px; margin-bottom: 20px;">
@@ -131,6 +191,14 @@
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="apk-url-input" placeholder="https://mediafire.com/file/delta-executor.apk" style="flex: 1;">
                     <button class="btn-submit" style="background: var(--as-verde);" onclick="guardarLinkAPK()">Actualizar Link</button>
+                </div>
+            </div>
+
+            <div style="border-bottom: 1px dashed var(--as-borde); padding-bottom: 20px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px 0; color: var(--as-accent);">📢 MODIFICAR TEXTO DE MARQUESINA</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="marquee-input-text" placeholder="Escribí el nuevo aviso para la marquesina...">
+                    <button class="btn-submit" onclick="guardarTextoMarquesina()">Actualizar Anuncio</button>
                 </div>
             </div>
 
@@ -156,7 +224,7 @@
         </div>
 
         <main class="scripts-list" id="scripts-feed">
-            </main>
+        </main>
 
     </div>
 
@@ -185,6 +253,7 @@
                 }
                 escucharAPK();
                 escucharScripts();
+                escucharMarquesina();
             });
         }
 
@@ -214,6 +283,49 @@
             }).then(() => {
                 alert("Enlace de la APK Delta actualizado de manera exitosa.");
             }).catch(e => alert("Error: " + e.message));
+        }
+
+        // --- GESTIÓN DE MARQUESINA ---
+        function escucharMarquesina() {
+            db.collection('config_delta').doc('marquesina_anuncio').onSnapshot(doc => {
+                const marqueeDisplay = document.getElementById('nexus-marquee-display');
+                const marqueeInput = document.getElementById('marquee-input-text');
+                
+                if (doc.exists && doc.data().texto) {
+                    const textoServidor = doc.data().texto;
+                    marqueeDisplay.innerText = textoServidor;
+                    if(marqueeInput) marqueeInput.value = textoServidor;
+                } else {
+                    marqueeDisplay.innerText = "Bienvenidos a Adroscripts. Copiá tus scripts favoritos de forma limpia.";
+                }
+            });
+        }
+
+        function guardarTextoMarquesina() {
+            const nuevoTexto = document.getElementById('marquee-input-text').value.trim();
+            if(!nuevoTexto) return alert("Por favor, ingresá un texto para la marquesina.");
+
+            db.collection('config_delta').doc('marquesina_anuncio').set({
+                texto: nuevoTexto,
+                ultima_modificacion: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert("Marquesina actualizada globalmente.");
+            }).catch(e => alert("Error: " + e.message));
+        }
+
+        // --- BUSCADOR ---
+        function filtrarScripts() {
+            const textoBusqueda = document.getElementById('script-searcher').value.toLowerCase();
+            const tarjetas = document.querySelectorAll('.script-card');
+
+            tarjetas.forEach(tarjeta => {
+                const titulo = tarjeta.querySelector('.script-title').innerText.toLowerCase();
+                if (titulo.includes(textoBusqueda)) {
+                    tarjeta.style.display = "block";
+                } else {
+                    tarjeta.style.display = "none";
+                }
+            });
         }
 
         // --- GESTIÓN DEL COLECTOR DE SCRIPTS ---
