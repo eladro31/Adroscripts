@@ -655,12 +655,42 @@
         function escaparHTML(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
         function abrirLoginMaster() {
-            const email = prompt("Email del Staff Técnico:");
-            if(!email) return;
-            const pass = prompt("Contraseña de Seguridad:");
-            if(!pass) return;
-            auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Acceso denegado: " + e.message));
-        }
+    const email = prompt("Email del Staff Técnico:");
+    if (!email) return;
+    const pass = prompt("Contraseña de Seguridad:");
+    if (!pass) return;
+
+    console.log("Intentando conexión con Firebase Auth para:", email);
+
+    auth.signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            console.log("¡Inicio de sesión exitoso!", userCredential.user);
+            alert("Acceso concedido. Panel de administración activado.");
+        })
+        .catch((error) => {
+            // Diagnóstico detallado del error en la programación
+            console.error("Código de error de Firebase:", error.code);
+            console.error("Mensaje de error:", error.message);
+            
+            // Mensajes amigables según el error detectado
+            switch (error.code) {
+                case 'auth/operation-not-allowed':
+                    alert("Error: El inicio de sesión por Email/Contraseña está DESACTIVADO en la consola de Firebase.");
+                    break;
+                case 'auth/wrong-password':
+                case 'auth/user-not-found':
+                case 'auth/invalid-credential':
+                    alert("Credenciales incorrectas. Verificá el usuario y la contraseña.");
+                    break;
+                case 'auth/invalid-email':
+                    alert("El formato del correo electrónico ingresado no es válido.");
+                    break;
+                default:
+                    alert("Error crítico de autenticación: " + error.message);
+            }
+        });
+}
+
     </script>
 </body>
 </html>
