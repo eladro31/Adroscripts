@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adroscripts | Delta Executor Hub</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --as-bg: #07050a;
+            --as-card: #120e1c;
+            --as-dark: #030205;
+            --as-accent: #a855f7;
+            --as-verde: #10b981;
+            --as-rojo: #ef4444;
+            --as-texto: #f3f4f6;
+            --as-gris: #9ca3af;
+            --as-borde: #251c36;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--as-bg);
+            color: var(--as-texto);
+        }
+
+        /* Topbar Header */
+        .as-header {
+            background: var(--as-dark);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--as-accent);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        .brand { font-size: 1.6rem; font-weight: 900; color: #fff; text-decoration: none; text-transform: uppercase; }
+        .brand span { color: var(--as-accent); text-shadow: 0 0 10px rgba(168, 85, 247, 0.5); }
+
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; box-sizing: border-box; }
+
+        /* Sección APK Destacada */
+        .apk-banner {
+            background: linear-gradient(135deg, #180f2b 0%, var(--as-card) 100%);
+            border: 1px solid var(--as-borde);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .apk-info h2 { margin: 0 0 5px 0; font-size: 1.6rem; color: #fff; }
+        .apk-info p { margin: 0; color: var(--as-gris); font-size: 0.95rem; }
+        .btn-download {
+            background: var(--as-verde); color: #000; padding: 12px 25px;
+            font-weight: 800; text-decoration: none; border-radius: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s;
+        }
+        .btn-download:hover { opacity: 0.9; }
+
+        /* Zonas de Administración */
+        .admin-box {
+            background: var(--as-card); border: 2px dashed var(--as-accent);
+            border-radius: 12px; padding: 20px; margin-bottom: 30px; display: none;
+        }
+        .admin-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 768px) { .admin-grid { grid-template-columns: 1fr 1fr; } .full-w { grid-column: span 2; } }
+
+        label { font-size: 0.75rem; font-weight: 700; color: var(--as-accent); display: block; margin-bottom: 5px; text-transform: uppercase; }
+        input, textarea {
+            width: 100%; padding: 10px; background: #09060f; border: 1px solid var(--as-borde);
+            border-radius: 6px; color: #fff; box-sizing: border-box; outline: none; font-family: inherit;
+        }
+        input:focus, textarea:focus { border-color: var(--as-accent); }
+        
+        .btn-submit { background: var(--as-accent); color: #000; border: none; padding: 12px; font-weight: 700; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+
+        /* Lista de Scripts */
+        .scripts-list { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .script-card {
+            background: var(--as-card); border: 1px solid var(--as-borde); border-radius: 12px;
+            padding: 22px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .script-title { font-size: 1.3rem; margin: 0 0 6px 0; color: #fff; font-weight: 700; }
+        .script-desc { font-size: 0.95rem; color: var(--as-gris); margin: 0 0 15px 0; line-height: 1.4; }
+        
+        /* Contenedor del código */
+        .code-box {
+            background: #09060f; border: 1px solid var(--as-borde); font-family: 'Courier New', Courier, monospace;
+            padding: 12px; border-radius: 6px; font-size: 0.85rem; color: #a78bfa; overflow-x: auto;
+            white-space: nowrap; margin-bottom: 15px;
+        }
+
+        .card-actions { display: flex; gap: 10px; }
+        .btn-copy { background: #221a33; color: var(--as-accent); border: 1px solid rgba(168, 85, 247, 0.3); padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.85rem; }
+        .btn-copy:hover { background: var(--as-accent); color: #000; }
+        .btn-delete { background: rgba(239, 68, 68, 0.15); color: var(--as-rojo); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.85rem; margin-left: auto; }
+
+        .btn-login { background: transparent; border: 1px solid rgba(168, 85, 247, 0.4); color: var(--as-accent); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+    </style>
+</head>
+<body onload="inicializarAdroscripts()">
+
+    <header class="as-header">
+        <a href="/" class="brand">Adro<span>scripts</span></a>
+        <div id="auth-status">
+            <button class="btn-login" onclick="abrirLoginMaster()">Staff Login</button>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <section class="apk-banner" id="apk-section-view">
+            <div class="apk-info">
+                <h2>Delta APK Executor</h2>
+                <p id="apk-status-text">Cargando enlace oficial del servidor...</p>
+            </div>
+            <a href="#" id="apk-download-link" class="btn-download" target="_blank" style="display: none;">📥 Descargar APK</a>
+        </section>
+
+        <div class="admin-box" id="admin-panel-box">
+            
+            <div style="border-bottom: 1px dashed var(--as-borde); padding-bottom: 20px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px 0; color: var(--as-verde);">🤖 GESTIONAR APK DELTA</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="apk-url-input" placeholder="https://mediafire.com/file/delta-executor.apk" style="flex: 1;">
+                    <button class="btn-submit" style="background: var(--as-verde);" onclick="guardarLinkAPK()">Actualizar Link</button>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="margin: 0 0 15px 0; color: var(--as-accent);">✍️ AGREGAR NUEVO SCRIPT</h3>
+                <div class="admin-grid">
+                    <div>
+                        <label>Nombre del Script / Juego</label>
+                        <input type="text" id="script-title-input" placeholder="Ej: Blox Fruits Auto-Farm">
+                    </div>
+                    <div>
+                        <label>Descripción / Notas de Uso</label>
+                        <input type="text" id="script-desc-input" placeholder="Ej: Funciona sin Key, activar en el mar 2">
+                    </div>
+                    <div class="full-w">
+                        <label>Código del Script (Lua / Texto)</label>
+                        <textarea id="script-code-input" rows="4" placeholder="loadstring(game:HttpGet(...))()"></textarea>
+                    </div>
+                    <button class="btn-submit full-w" onclick="publicarScriptNuevo()">🚀 Publicar Script en la Red</button>
+                </div>
+            </div>
+
+        </div>
+
+        <main class="scripts-list" id="scripts-feed">
+            </main>
+
+    </div>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyA58MXpItx1F9zNnJbyeS_4FT_onYx9wig", authDomain: "uqt-virtual.firebaseapp.com", projectId: "uqt-virtual", storageBucket: "uqt-virtual.appspot.com", messagingSenderId: "777641217730", appId: "1:777641217730:web:8c5b5f9b4c7d8e2a" };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let esAdmin = false;
+        const CONFIG_ADMIN = "admin@mercadogato.com";
+
+        function inicializarAdroscripts() {
+            auth.onAuthStateChanged(user => {
+                const panel = document.getElementById('admin-panel-box');
+                const authStatus = document.getElementById('auth-status');
+                
+                if(user && user.email.toLowerCase() === CONFIG_ADMIN.toLowerCase()) {
+                    esAdmin = true;
+                    panel.style.display = 'block';
+                    authStatus.innerHTML = `<span style="color:var(--as-rojo); font-weight:700; font-size:0.8rem; margin-right:10px;">🔴 SCRIPTS ADMIN</span><button class="btn-login" onclick="auth.signOut()" style="background:var(--as-rojo); color:#fff; border:none;">Salir</button>`;
+                } else {
+                    esAdmin = false;
+                    panel.style.display = 'none';
+                    authStatus.innerHTML = `<button class="btn-login" onclick="abrirLoginMaster()">Staff Login</button>`;
+                }
+                escucharAPK();
+                escucharScripts();
+            });
+        }
+
+        // --- GESTIÓN DE APK DELTA ---
+        function escucharAPK() {
+            db.collection('config_delta').doc('apk_link').onSnapshot(doc => {
+                const statusText = document.getElementById('apk-status-text');
+                const dlLink = document.getElementById('apk-download-link');
+                
+                if (doc.exists && doc.data().url) {
+                    const urlValida = doc.data().url;
+                    statusText.innerText = "Última versión oficial lista para instalar de forma segura.";
+                    dlLink.href = urlValida;
+                    dlLink.style.display = "inline-block";
+                    document.getElementById('apk-url-input').value = urlValida;
+                } else {
+                    statusText.innerText = "Enlace temporalmente caído o bajo mantenimiento técnico.";
+                    dlLink.style.display = "none";
+                }
+            });
+        }
+
+        function guardarLinkAPK() {
+            const url = document.getElementById('apk-url-input').value.trim();
+            db.collection('config_delta').doc('apk_link').set({
+                url: url
+            }).then(() => {
+                alert("Enlace de la APK Delta actualizado de manera exitosa.");
+            }).catch(e => alert("Error: " + e.message));
+        }
+
+        // --- GESTIÓN DEL COLECTOR DE SCRIPTS ---
+        function escucharScripts() {
+            db.collection('delta_scripts').orderBy('fecha', 'desc').onSnapshot(snap => {
+                const feed = document.getElementById('scripts-feed');
+                feed.innerHTML = "";
+
+                if (snap.empty) {
+                    feed.innerHTML = `<div style="text-align:center; color:var(--as-gris); padding:40px;">No hay scripts indexados en este momento.</div>`;
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    const botonBorrar = esAdmin ? `<button class="btn-delete" onclick="eliminarScript('${doc.id}')">❌ Eliminar</button>` : '';
+
+                    feed.innerHTML += `
+                        <article class="script-card">
+                            <h2 class="script-title">${s.titulo}</h2>
+                            <p class="script-desc">${s.descripcion}</p>
+                            <div class="code-box" id="code-${doc.id}">${escaparHTML(s.codigo)}</div>
+                            <div class="card-actions">
+                                <button class="btn-copy" onclick="copiarAlPortapapeles('${doc.id}')">📋 Copiar Script</button>
+                                ${botonBorrar}
+                            </div>
+                        </article>
+                    `;
+                });
+            });
+        }
+
+        function publicarScriptNuevo() {
+            const titulo = document.getElementById('script-title-input').value.trim();
+            const descripcion = document.getElementById('script-desc-input').value.trim();
+            const codigo = document.getElementById('script-code-input').value.trim();
+
+            if (!titulo || !codigo) return alert("Por favor, completá al menos el título y el código del script.");
+
+            db.collection('delta_scripts').add({
+                titulo: titulo,
+                descripcion: descripcion,
+                codigo: codigo,
+                fecha: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById('script-title-input').value = "";
+                document.getElementById('script-desc-input').value = "";
+                document.getElementById('script-code-input').value = "";
+                alert("¡Script publicado con éxito en el catálogo!");
+            }).catch(e => alert("Error: " + e.message));
+        }
+
+        function eliminarScript(idDoc) {
+            if (confirm("¿Estás seguro de que querés purgar este script permanentemente?")) {
+                db.collection('delta_scripts').doc(idDoc).delete().then(() => {
+                    alert("Script removido del servidor.");
+                });
+            }
+        }
+
+        // --- UTILIDADES ---
+        function copiarAlPortapapeles(idDoc) {
+            const elementoCodigo = document.getElementById(`code-${idDoc}`);
+            navigator.clipboard.writeText(elementoCodigo.innerText).then(() => {
+                alert("¡Código copiado al portapapeles! Pegalo dentro de Delta Executor.");
+            }).catch(() => {
+                alert("No se pudo copiar de forma automática.");
+            });
+        }
+
+        function escaparHTML(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function abrirLoginMaster() {
+            const email = prompt("Email del Staff Técnico:");
+            if(!email) return;
+            const pass = prompt("Contraseña de Seguridad:");
+            if(!pass) return;
+            auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Acceso denegado: " + e.message));
+        }
+    </script>
+</body>
+</html>
